@@ -8,6 +8,7 @@ const game = {
   activeCell: [],
   validMoves: [],
   jumpMode: false, // When a possible jump is found, we set this to true to force a player to only select pieces that can jump the opponent.
+  piecesThatCanJump:[],
 }
 
 window.onload = function() {
@@ -36,7 +37,7 @@ window.onload = function() {
         element:elem, // Stores a reference to it's respective DIV element for easier manipulation later.
         active: false, // For second click functionality. If this cell is active, we can click it again to make it inactive.
         validMove: false,
-        jumpedCell:[], // Holds the coordinates to the cell that will be jumped if the piece is moved here
+        jumpRequired:[], // Holds the coordinates to the cell that will be jumped if the piece is moved here
         jumpPossible: false, // Used to force players to jump.
       });
     }
@@ -136,22 +137,26 @@ function getValidMoves(x, y, onlyCheck) {
 }
 
 function movePiece(x, y) {
+  game.activeCell = [];
   let a = game.activeCell[0];
   let b = game.activeCell[1];
-  clearCell(a, b); // Clear the active cell
-  if(game.grid[x][y].jumpedCell !== 0) { // If a piece was jumped
-    a = game.grid[x][y].jumpedCell[0];
-    b = game.grid[x][y].jumpedCell[1];
+  clearCell(a, b); // Clear the cell we just left
+  if(game.grid[x][y].jumpRequired !== 0) { // If a piece was jumped
+    a = game.grid[x][y].jumpRequired[0];
+    b = game.grid[x][y].jumpRequired[1];
     clearCell(a, b); // clear the jumped cell
-    game.activeCell = [x, y]; // Sets the new activeCell to the cell we just landed on after jumping
     if(!checkForJumps(x, y, false)) { // Call the check for jumps function with false to check only the current cell for possible jumps. If there are no more jumps, we can set jump mode to false and end the turn further down.
-      game.jumpMode = false;
+      game.jumpMode = false; // if no additional jumps were found, we can set jump mode to false to allow us to end the turn
+    } else if(checkForJumps(x, y, false)) { // if more jumps were found, we can't end the turn until the player jumps again.
+      clearPiecesThatCanJumpArray(); // Clear any cells that previously had the marker saying they can jump another piece since the only additional jump allowed is from the piece that just jumped
+      game.piecesThatCanJump.push([x, y]); // Add current cell to the pieces that can jump array so we can clear it later
+      game.grid[x][y].jumpPossible = true; // Mark this piece as being able to jump another piece so the player can properly click and set it as active during jump mode
     }
   }
   // Update the new cell that was moved to.
   game.grid[x][y].occupiedBy = game.teamTurn;
   game.grid[x][y].validMove = false;
-  game.grid[x][y].jumpedCell = [];
+  game.grid[x][y].jumpRequired = [];
   if(game.teamTurn === "red") {
     game.grid[x][y].element.style.backgroundImage = 'url(redPiece.png)';
   } else {
@@ -166,7 +171,7 @@ function endTurn() {
   game.jumpMode = false;
   game.activeCell = [];
   clearValidMovesArray();
-  clearjumpPossibleArray();
+  clearPiecesThatCanJumpArray();
 }
 
 // Takes each cell from the valid moves array and clears it/resets it to defaults. We can safely do this because only empty cells can become valid moves, meaning resetting to defaults won't erase anything important.
@@ -180,10 +185,10 @@ function clearValidMovesArray() {
 
 // Takes each cell from the jumpPossible array and sets its jumpPossible property to false. We don't send them to clearCell() because we aren't setting all properties to default.
 // We need to store cells in the jumpPossible array in the case that we have multiple possible jumps. Once we jump, we need to access all of the cells with the possibleJump property set to true and set them back to false.
-function clearjumpPossibleArray() {
-  for(let i=0; i<game.jumpPossible.length; i++) {
-    const x = game.jumpPossible[i][0];
-    const y = game.jumpPossible[i][1];
+function clearPiecesThatCanJumpArray() {
+  for(let i=0; i<game.piecesThatCanJump.length; i++) {
+    const x = game.piecesThatCanJump[i][0];
+    const y = game.piecesThatCanJump[i][1];
     game.grid[x][y].jumpPossible = false;
   }
 }
@@ -191,7 +196,7 @@ function clearjumpPossibleArray() {
 function clearCell(x, y) {
   game.grid[x][y].validMove = false;
   game.grid[x][y].active = false;
-  game.grid[x][y].jumpedCell = [];
+  game.grid[x][y].jumpRequired = [];
   game.grid[x][y].element.classList.remove("highlight");
   game.grid[x][y].element.classList.remove("active");
   game.grid[x][y].occupiedBy = "none";
