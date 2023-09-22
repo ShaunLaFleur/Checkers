@@ -1,5 +1,5 @@
 body {
-  background: linear-gradient(88deg, #1F242F 0%, #36415D 40%, #515D92 93%, #566696 100%);
+  background: linear-gradient(88deg, #1a1d24 0%, #36415D 40%, #353d61 93%, #3f4b70 100%);
   color:white;
 	font-family: 'VT323', monospace;
 	font-size:x-large;
@@ -55,11 +55,11 @@ p {
 }
 
 .colorOne {
-  background: rgb(247, 221, 204);
+  background: rgb(227, 231, 247);
 }
 
 .colorTwo {
-  background: rgb(56, 54, 54);
+  background: rgb(99, 95, 95);
 }
 
 .highLight {

@@ -35,9 +35,9 @@ window.onload = function() {
       elem.setAttribute('onClick','cellClicked(this)');
       elem.className = "cell";
       if ((x + y) % 2 === 0) {
-        elem.classList.add('colorOne');
-      } else {
         elem.classList.add('colorTwo');
+      } else {
+        elem.classList.add('colorOne');
       }
       // Pushes an object that holds the cells data into it's corresponding column and row.
       game.grid[x][y] = structuredClone(game.gridDefaults);
