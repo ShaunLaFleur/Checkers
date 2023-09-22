@@ -66,29 +66,28 @@ function startTurn() {
   } else {
     game.teamTurn = "red";
   }
-  if(checkForJumps(null, null, true)) { // Checks if any jumps are available to the current player.
-    game.jumpMode = true; // Sets jump mode to true. This refers to the state in which the current player HAS to jump the opponent.
-  }
+  checkForJumps(null, null, true)// Checks if any jumps are available to the current player and if they are found, turns jumpMode on, forcing the player to jump.
 }
 
 // Used to check for possible jumps. Not the same function that sets these jumps as valid movements. This is used at the beginning of each turn to force jumps if they are available by enabling jump mode.
 function checkForJumps(a, b, checkAll) {
-  let jumpsPossible = false;
+  // If check all is true, we check all pieces of the current team to see if they can make a jump.
   if(checkAll) {
     for(let y=0; y<game.rows; y++) {
       for(let x=0; x<game.columns; x++){
         if(game.grid[x][y].occupiedBy === game.teamTurn) {
-          getValidMoves(x, y, true);
+          getValidMoves(x, y, true); // true signals to the function that we are in check only mode. We are only checking to see if jumps are possible, we are not checking for valid movements.
         }
       }
     }
+  // Otherwise if checkAll is false, we only check the coordinates that were passed as parameters.
   } else if(!checkAll) {
     getValidMoves(a, b, true);
   }
-  if(game.piecesThatCanJump.length !== 0) {
-    return true;
-  } else if(game.piecesThatCanJump.length === 0) {
-    return false;
+  if(game.piecesThatCanJump.length !== 0) { // If there are pieces that can make a jump, we turn jumpMode on.
+    game.jumpMode = true;
+  } else if(game.piecesThatCanJump.length === 0) { // If no pieces can make a jump this turn, we turn jumpMode off.
+    game.jumpMode = false;
   }
 }
 
@@ -202,7 +201,7 @@ function getValidMoves(x, y, onlyCheck) {
       a = x+1; // For prettier calculations
       b = y-1; // For prettier calculations
       // Check for empty spot up-right from adjacent enemy piece
-      if(a !== 0 && b !== 0 && game.grid[a+1][b-1].occupiedBy === "none") {
+      if(a !== 7 && b !== 0 && game.grid[a+1][b-1].occupiedBy === "none") {
         if(onlyCheck && !game.grid[x][y].jumpPossible) {
           setJumpPossible(x, y);
         } else if(!onlyCheck) {
@@ -236,14 +235,10 @@ function movePiece(x, y) {
     a = game.grid[x][y].jumpRequired[0];
     b = game.grid[x][y].jumpRequired[1];
     clearCell(a, b); // clear the jumped cell
-    if(!checkForJumps(x, y, false)) { // Call the check for jumps function with false to check only the current cell for possible jumps. If there are no more jumps, we can set jump mode to false and end the turn further down.
-      game.jumpMode = false; // if no additional jumps were found, we can set jump mode to false to allow us to end the turn
-    } else {
-      clearValidMovesArray(); // If we enter jump mode, endTurn won't be triggered and thus valid move cells that are highlighted will not be cleared.
-    } /*else if(checkForJumps(x, y, false)) { // if more jumps were found, we can't end the turn until the player jumps again.
-     // game.piecesThatCanJump.push([x, y]); // Add current cell coordinates to the pieces that can jump array so we can clear it later
-      game.grid[x][y].jumpPossible = true; // Mark this piece as being able to jump another piece so the player can properly click and set it as active during jump mode
-    }*/
+    checkForJumps(x, y, false) // then call the check for jumps function with false to check only the current cell for possible additional jumps. If there are no more jumps, we can set jump mode to false and end the turn further down.
+    if(game.jumpMode) {
+      clearValidMovesArray(); // If we remain in jump mode, endTurn won't be triggered and thus highlighted cells will not be cleared, so we call it here.
+    }
   }
   // Update the new cell that was moved to.
   game.grid[x][y].occupiedBy = game.teamTurn;
