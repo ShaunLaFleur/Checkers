@@ -71,7 +71,7 @@ function startTurn() {
   }
 }
 
-// Used to check for possible jumps. Not the same function that sets these jumps as valid movements. This is used at the beginning of each turn to force jumps.
+// Used to check for possible jumps. Not the same function that sets these jumps as valid movements. This is used at the beginning of each turn to force jumps if they are available by enabling jump mode.
 function checkForJumps(a, b, checkAll) {
   let jumpsPossible = false;
   if(checkAll) {
@@ -144,14 +144,14 @@ function getValidMoves(x, y, onlyCheck) {
     opponent = "black";
   }
   // Check for empty spot up-left
-  if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 0 && !game.jumpMode && !onlyCheck && game.grid[x-1][y-1].occupiedBy === "none") {
+  if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 0 && y !== 0 && !game.jumpMode && !onlyCheck && game.grid[x-1][y-1].occupiedBy === "none") {
     setValidMove(x-1, y-1);
   // Check for opponent at up-left
-  } else if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 0 && game.grid[x-1][y-1].occupiedBy === opponent) {
+  } else if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 0 && y !== 0 && game.grid[x-1][y-1].occupiedBy === opponent) {
     a = x-1; // For prettier calculations
     b = y-1; // For prettier calculations
     // Check for empty spot up-left from adjacent enemy piece
-    if(a !== 0 && game.grid[a-1][b-1].occupiedBy === "none") {
+    if(a !== 0 && b !== 0 && game.grid[a-1][b-1].occupiedBy === "none") {
       if(onlyCheck && !game.grid[x][y].jumpPossible) {
         setJumpPossible(x, y);
       } else if(!onlyCheck) {
@@ -161,14 +161,14 @@ function getValidMoves(x, y, onlyCheck) {
     }
   }
   // Check for empty spot bottom-left
-  if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 0 && !game.jumpMode && !onlyCheck && game.grid[x-1][y+1].occupiedBy === "none") {
+  if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 0 && y !== 7 && !game.jumpMode && !onlyCheck && game.grid[x-1][y+1].occupiedBy === "none") {
     setValidMove(x-1, y+1);
   // Check for opponent at bottom-left
-  } else if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 0 && game.grid[x-1][y+1].occupiedBy === opponent) {
+  } else if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 0 && y !== 7 && game.grid[x-1][y+1].occupiedBy === opponent) {
     a = x-1; // For prettier calculations
     b = y+1; // For prettier calculations
     // Check for empty spot bottom-left from adjacent enemy piece
-    if(a !== 0 && game.grid[a-1][b+1].occupiedBy === "none") {
+    if(a !== 0 && b !== 7 && game.grid[a-1][b+1].occupiedBy === "none") {
       if(onlyCheck && !game.grid[x][y].jumpPossible) {
         setJumpPossible(x, y);
       } else if(!onlyCheck) {
@@ -176,7 +176,41 @@ function getValidMoves(x, y, onlyCheck) {
         game.grid[a-1][b+1].jumpRequired = [a, b];
       }
     }
+  } 
+  // Check for empty spot bottom-right
+  if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 7 && y !== 7 && !game.jumpMode && !onlyCheck && game.grid[x+1][y+1].occupiedBy === "none") {
+    setValidMove(x+1, y+1);
+  // Check for opponent at bottom-right
+  } else if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 7 && y !== 7 && game.grid[x+1][y+1].occupiedBy === opponent) {
+    a = x+1; // For prettier calculations
+    b = y+1; // For prettier calculations
+    // Check for empty spot bottom-right from adjacent enemy piece
+    if(a !== 0 && b !== 7 && game.grid[a+1][b+1].occupiedBy === "none") {
+      if(onlyCheck && !game.grid[x][y].jumpPossible) {
+        setJumpPossible(x, y);
+      } else if(!onlyCheck) {
+        setValidMove(a+1, b+1);
+        game.grid[a+1][b+1].jumpRequired = [a, b];
+      }
+    }
   }
+    // Check for empty spot up-right
+    if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 7 && y !== 0 && !game.jumpMode && !onlyCheck && game.grid[x+1][y-1].occupiedBy === "none") {
+      setValidMove(x+1, y-1);
+    // Check for opponent at bottom-right
+    } else if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 7 && y !== 0 && game.grid[x+1][y-1].occupiedBy === opponent) {
+      a = x+1; // For prettier calculations
+      b = y-1; // For prettier calculations
+      // Check for empty spot up-right from adjacent enemy piece
+      if(a !== 0 && b !== 0 && game.grid[a+1][b-1].occupiedBy === "none") {
+        if(onlyCheck && !game.grid[x][y].jumpPossible) {
+          setJumpPossible(x, y);
+        } else if(!onlyCheck) {
+          setValidMove(a+1, b-1);
+          game.grid[a+1][b-1].jumpRequired = [a, b];
+        }
+      }
+    }
 }
 
 function setJumpPossible(x, y) {
@@ -204,10 +238,12 @@ function movePiece(x, y) {
     clearCell(a, b); // clear the jumped cell
     if(!checkForJumps(x, y, false)) { // Call the check for jumps function with false to check only the current cell for possible jumps. If there are no more jumps, we can set jump mode to false and end the turn further down.
       game.jumpMode = false; // if no additional jumps were found, we can set jump mode to false to allow us to end the turn
-    } else if(checkForJumps(x, y, false)) { // if more jumps were found, we can't end the turn until the player jumps again.
-      game.piecesThatCanJump.push([x, y]); // Add current cell coordinates to the pieces that can jump array so we can clear it later
+    } else {
+      clearValidMovesArray(); // If we enter jump mode, endTurn won't be triggered and thus valid move cells that are highlighted will not be cleared.
+    } /*else if(checkForJumps(x, y, false)) { // if more jumps were found, we can't end the turn until the player jumps again.
+     // game.piecesThatCanJump.push([x, y]); // Add current cell coordinates to the pieces that can jump array so we can clear it later
       game.grid[x][y].jumpPossible = true; // Mark this piece as being able to jump another piece so the player can properly click and set it as active during jump mode
-    }
+    }*/
   }
   // Update the new cell that was moved to.
   game.grid[x][y].occupiedBy = game.teamTurn;
