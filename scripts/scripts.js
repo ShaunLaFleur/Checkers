@@ -97,17 +97,18 @@ function checkForJumps(a, b, checkAll) {
 function cellClicked(element) {
   const x = parseInt(element.getAttribute("data-x"));
   const y = parseInt(element.getAttribute("data-y"));
+  const cell = game.grid[x][y];
   console.log(`Clicked cell X ${x}, Y ${y}`);
   console.log(game.grid[x][y]);
-  if(game.grid[x][y].validMove) {
+  if(cell.validMove) {
     movePiece(x, y);
-  } else if(game.grid[x][y].occupiedBy !== game.teamTurn || (game.grid[x][y].occupiedBy === "none" && !game.grid[x][y].validMove)) {
+  } else if(cell.occupiedBy !== game.teamTurn || (cell.occupiedBy === "none" && !cell.validMove)) {
     return; // then we simply do nothing and return
-  } else if(game.grid[x][y].active) { // If the clicked cell is active, we turn it inactive
+  } else if(cell.active) { // If the clicked cell is active, we turn it inactive
     toggleActive(x, y, false); // make it inactive
-  } else if(!game.grid[x][y].active && game.grid[x][y].occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length === 0 || (game.jumpMode && game.grid[x][y].jumpPossible && game.activeCell.length === 0)) { 
+  } else if(!cell.active && cell.occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length === 0 || (game.jumpMode && cell.jumpPossible && game.activeCell.length === 0)) { 
     toggleActive(x, y, true);
-  } else if(!game.grid[x][y].active && game.grid[x][y].occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length > 0 || (game.jumpMode && game.grid[x][y].jumpPossible && game.activeCell.length > 0)) {
+  } else if(!cell.active && cell.occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length > 0 || (game.jumpMode && cell.jumpPossible && game.activeCell.length > 0)) {
     a = game.activeCell[0];
     b = game.activeCell[1];
     toggleActive(a, b, false); // then we remove active from the previously clicked cell
@@ -130,13 +131,14 @@ function toggleActive(x, y, toggle) {
 }
 
 function getValidMoves(x, y, onlyCheck) {
-  if(game.teamTurn === "red" || game.grid[x][y].isKing) {
+  const cell = game.grid[x][y];
+  if(game.teamTurn === "red" || cell.isKing) {
     // Check down-left
     checkDirection(x, y, -1, 1, 0, 7, onlyCheck);
     // Check down-right
     checkDirection(x, y, 1, 1, 7, 7, onlyCheck);
   }
-  if(game.teamTurn === "black" || game.grid[x][y].isKing) {
+  if(game.teamTurn === "black" || cell.isKing) {
     // Check up-left
     checkDirection(x, y, -1, -1, 0, 0, onlyCheck);
     // Check up-right
@@ -172,22 +174,25 @@ function setJumpPossible(x, y) {
 }
 
 function setValidMove(x, y) {
-  game.grid[x][y].validMove = true;
-  game.grid[x][y].element.classList.add("highlight");
+  console.log(`set valid move called for cell ${x},${y}`);
+  const cell = game.grid[x][y];
+  cell.validMove = true;
+  cell.element.classList.add("highlight");
   game.validMoves.push([x,y]);
 }
 
 function movePiece(x, y) {
   clearPiecesThatCanJumpArray(); // Clear any cells that previously had the marker saying they can jump another piece since the only additional jump allowed is from the piece that just jumped
+  const cell = game.grid[x][y];
   game.piecesThatCanJump = []; // Clear the array itself.
   let a = game.activeCell[0]; // Store active piece's column coordinate
   let b = game.activeCell[1]; // Store active piece's row coordinate
   const bgImage = game.grid[a][b].bgImage; // Store the background image from the cell we're leaving
-  game.grid[x][y].isKing = game.grid[a][b].isKing; // Transfer King status to the new cell we're moving to in case we need to check for double jumps from that location.
+  cell.isKing = game.grid[a][b].isKing; // Transfer King status to the new cell we're moving to in case we need to check for double jumps from that location.
   clearCell(a, b); // Clear the cell we're leaving
-  if(game.grid[x][y].jumpRequired.length !== 0) { // If a piece was jumped
-    a = game.grid[x][y].jumpRequired[0];
-    b = game.grid[x][y].jumpRequired[1];
+  if(cell.jumpRequired.length !== 0) { // If a piece was jumped
+    a = cell.jumpRequired[0];
+    b = cell.jumpRequired[1];
     clearCell(a, b); // clear the jumped cell
     checkForJumps(x, y, false) // then call the check for jumps function with false to check only the current cell for possible additional jumps. If there are no more jumps, we can set jump mode to false and end the turn further down.
     if(game.jumpMode) {
@@ -195,11 +200,11 @@ function movePiece(x, y) {
     }
   }
   // Update the new cell that was moved to.
-  game.grid[x][y].occupiedBy = game.teamTurn;
-  game.grid[x][y].validMove = false;
-  game.grid[x][y].jumpRequired = [];
-  game.grid[x][y].bgImage = bgImage;
-  game.grid[x][y].element.style.backgroundImage = bgImage;
+  cell.occupiedBy = game.teamTurn;
+  cell.validMove = false;
+  cell.jumpRequired = [];
+  cell.bgImage = bgImage;
+  cell.element.style.backgroundImage = bgImage;
   if(game.teamTurn === "red" && y === 7 || game.teamTurn === "black" && y === 0) {
     kingMaker(x, y);
   }
@@ -214,7 +219,7 @@ function kingMaker(x, y) {
   const teamColor = cell.occupiedBy;
   cell.element.style.backgroundImage = `url(${teamColor}KingPiece.png)`;
   cell.bgImage = `url(${teamColor}KingPiece.png)`;
-  }
+}
 
 function endTurn() {
   game.jumpMode = false;
@@ -229,9 +234,10 @@ function clearValidMovesArray() {
   for(let i=0; i<game.validMoves.length; i++) {
     const x = game.validMoves[i][0];
     const y = game.validMoves[i][1];
-    game.grid[x][y].element.classList.remove("highlight");
-    game.grid[x][y].validMove = false;
-    game.grid[x][y].jumpRequired = [];
+    const cell = game.grid[x][y];
+    cell.element.classList.remove("highlight");
+    cell.validMove = false;
+    cell.jumpRequired = [];
   }
   game.validMoves = [];
 }
@@ -264,6 +270,6 @@ function clearCell(x, y) {
   elem.classList.remove("highlight"); // Remove the valid move highlight if it exists
   elem.classList.remove("active"); // Remove any active highlighting if it exists
   elem.style.backgroundImage = 'none'; // Remove any displayed pieces if they exist
-  game.grid[x][y] = structuredClone(game.gridDefaults); // Set the grid object back to default values
+  game.grid[x][y] = structuredClone(game.gridDefaults); // Set the grid object back to default values, we don't use the reference variable "cell" because it can act a bit wonky with
   game.grid[x][y].element = elem; // Restore the reference to the respective DOM element.
 }
