@@ -2,12 +2,35 @@ body {
   background: linear-gradient(88deg, #1a1d24 0%, #36415D 40%, #353d61 93%, #3f4b70 100%);
   color:white;
 	font-family: 'VT323', monospace;
-	font-size:x-large;
+	font-family: 'Kdam Thmor Pro';
+	font-size: 20px;
 }
 
 .mainsection {
 	margin-left:30%;
   margin-top: 3%;
+}
+
+#scoreboard {
+	display: inline-block;
+	width: 150px;
+	height: 120;
+	text-align:center;
+	margin-top:-10px;
+
+	background: rgba( 255, 255, 255, 0.15 );
+	box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+	backdrop-filter: blur( 5px );
+	-webkit-backdrop-filter: blur( 5px );
+	border-radius: 10px;
+	border: 1px solid rgba( 255, 255, 255, 0.18 );
+}
+
+#turn-display {
+	width: 80px;
+	height: 80px;
+	margin-left:26%;
+	margin-bottom: 10%;
 }
 
 .gridcontainer2 {
@@ -63,9 +86,9 @@ p {
 }
 
 .highLight {
-	background: rgb(236, 210, 61);
+	background: rgb(245, 223, 102);
 } 
 
 .active {
-	background: green;
+	background: rgb(60, 240, 60);
 }

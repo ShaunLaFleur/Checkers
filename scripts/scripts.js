@@ -17,7 +17,7 @@ const game = {
     validMove: false, // Is it valid to move to this cell from the active cell
     jumpRequired: [], // The jump required to get from the active cell to this cell.
     jumpPossible: false, // Whether or not a jump is possible FROM this cell.
-    bgImage: null, // Used to update cells as we move.
+    bgImage: null, // Used to update cells to display pieces as we move.
   },
 }
 
@@ -49,22 +49,26 @@ window.onload = function() {
 }
 
 function spawnPieces() {
-  for(let i=0; i<game.blackStartingPositions.length; i++) {
-    let x = game.blackStartingPositions[i][0];
-    let y = game.blackStartingPositions[i][1];
-    game.grid[x][y].occupiedBy = "black";
-    game.grid[x][y].element.style.backgroundImage = 'url(blackPiece.png)';
-    game.grid[x][y].bgImage = 'url(blackPiece.png)'; // Used to update cells as we move.
-    x = game.redStartingPositions[i][0];
-    y = game.redStartingPositions[i][1];
-    game.grid[x][y].occupiedBy = "red";
-    game.grid[x][y].element.style.backgroundImage = 'url(redPiece.png)';
-    game.grid[x][y].bgImage = 'url(redPiece.png)'; // Used to update cells as we move.
+  const teamColors = ["black", "red"]; // Sets an array holding each team color.
+  for(const color of teamColors) { // For each index in teamColors, sets the variable color to that indexes value
+    const startingPositions = color === "black" ? game.blackStartingPositions : game.redStartingPositions; // Ternary if statement. 
+    for(let i=0; i<startingPositions.length; i++) {
+      let x = startingPositions[i][0];
+      let y = startingPositions[i][1];
+      game.grid[x][y].occupiedBy = color;
+      game.grid[x][y].element.style.backgroundImage = `url(${color}Piece.png)`;
+      game.grid[x][y].bgImage = `url(${color}Piece.png)`; // Used to update cells as we move.
+    }
   }
+  element = document.getElementById("turn-display");
+  element.style.backgroundImage = "URL(blackPieceMini.png)";
 }
 
 function startTurn() {
+  element = document.getElementById("turn-display");
   game.teamTurn = (game.teamTurn === "black") ? "red" : "black"; // If game.teamTurn is black, set it to red, otherwise set it to black.
+  const teamColor = game.teamTurn;
+  element.style.backgroundImage = `URL(${teamColor}PieceMini.png)`;
   checkForJumps(null, null, true)// Checks if any jumps are available to the current player and if they are found, turns jumpMode on, forcing the player to jump.
 }
 
@@ -100,44 +104,39 @@ function cellClicked(element) {
   } else if(game.grid[x][y].occupiedBy !== game.teamTurn || (game.grid[x][y].occupiedBy === "none" && !game.grid[x][y].validMove)) {
     return; // then we simply do nothing and return
   } else if(game.grid[x][y].active) { // If the clicked cell is active, we turn it inactive
-    removeActive(x, y); // make it inactive
+    toggleActive(x, y, false); // make it inactive
   } else if(!game.grid[x][y].active && game.grid[x][y].occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length === 0 || (game.jumpMode && game.grid[x][y].jumpPossible && game.activeCell.length === 0)) { 
-    setActive(x, y);
+    toggleActive(x, y, true);
   } else if(!game.grid[x][y].active && game.grid[x][y].occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length > 0 || (game.jumpMode && game.grid[x][y].jumpPossible && game.activeCell.length > 0)) {
     a = game.activeCell[0];
     b = game.activeCell[1];
-    removeActive(a, b); // then we remove active from the previously clicked cell
-    setActive(x, y); // and set active on the currently clicked cell
+    toggleActive(a, b, false); // then we remove active from the previously clicked cell
+    toggleActive(x, y, true); // and set active on the currently clicked cell
   }
 }
 
-function removeActive(x, y) {
-  console.log("called remove active");
-  game.grid[x][y].active = false;
-  game.grid[x][y].element.classList.remove("active");
-  game.activeCell = [];
-  clearValidMovesArray();
-}
-
-function setActive(x, y) {
-  console.log("called setActive");
-  game.grid[x][y].active = true;
-  game.grid[x][y].element.classList.add("active");
-  game.activeCell = [x, y];
-  getValidMoves(x, y);
+function toggleActive(x, y, toggle) {
+  const cell = game.grid[x][y];
+  cell.active = toggle;
+  if(toggle) {
+    cell.element.classList.add("active");
+    game.activeCell = [x, y];
+    getValidMoves(x, y);
+  } else {
+    cell.element.classList.remove("active");
+    game.activeCell = [];
+    clearValidMovesArray();
+  }
 }
 
 function getValidMoves(x, y, onlyCheck) {
-  console.log("Get Valid Moves Triggered");
   if(game.teamTurn === "red" || game.grid[x][y].isKing) {
-    console.log("Red team check triggered");
     // Check down-left
     checkDirection(x, y, -1, 1, 0, 7, onlyCheck);
     // Check down-right
     checkDirection(x, y, 1, 1, 7, 7, onlyCheck);
   }
   if(game.teamTurn === "black" || game.grid[x][y].isKing) {
-    game.log
     // Check up-left
     checkDirection(x, y, -1, -1, 0, 0, onlyCheck);
     // Check up-right
@@ -147,14 +146,10 @@ function getValidMoves(x, y, onlyCheck) {
 
 // x and y are the coordinates to start checks from, dx and dy are the adjustments for the x and y coords to determine which direction to check, the next two are for edge checking and then onlyCheck is whether we're only checking for jumps.
 function checkDirection(x, y, dx, dy, columnCheck, rowCheck, onlyCheck) {
-  console.log("Check direction called");
   let a;
   let b;
   const opponent = (game.teamTurn === "black") ? "red" : "black"; // If game.teamTurn === black, return red, else return black.
-  console.log(opponent);
-  console.log(`X: ${x}, ${y}`);
   if(x !== columnCheck && y !== rowCheck && !game.jumpMode && !onlyCheck && game.grid[x+dx][y+dy].occupiedBy === "none") {
-    console.log("Triggered");
     setValidMove(x+dx, y+dy);
   } else if(x !== columnCheck && y !== rowCheck && game.grid[x+dx][y+dy].occupiedBy === opponent) {
     a = x+dx; // For prettier calculations
@@ -177,7 +172,6 @@ function setJumpPossible(x, y) {
 }
 
 function setValidMove(x, y) {
-  console.log("Set valid move called");
   game.grid[x][y].validMove = true;
   game.grid[x][y].element.classList.add("highlight");
   game.validMoves.push([x,y]);
@@ -215,15 +209,12 @@ function movePiece(x, y) {
 }
 
 function kingMaker(x, y) {
-  game.grid[x][y].isKing = true;
-  if(game.teamTurn === "red") {
-   //game.grid[x][y].element.style.backgroundImage = redKing
-   //game.grid[x][y].bgImage = redking
-  } else {
-  game.grid[x][y].element.style.backgroundImage = 'url(blackKingPiece.png)';
-  game.grid[x][y].bgImage = 'url(blackKingPiece.png)';
+  cell = game.gridp[x][y];
+  cell.isKing = true;
+  const teamColor = cell.occupiedBy;
+  cell.element.style.backgroundImage = `url(${teamColor}KingPiece.png)`;
+  cell.bgImage = `url(${teamColor}KingPiece.png)`;
   }
-}
 
 function endTurn() {
   game.jumpMode = false;
@@ -253,6 +244,19 @@ function clearPiecesThatCanJumpArray() {
     const y = game.piecesThatCanJump[i][1];
     game.grid[x][y].jumpPossible = false;
   }
+}
+
+function resetGame() {
+  // Reset every cell to default values and clear the board.
+  for(y=0; y<game.rows; y++) {
+    for(x=0; x<game.columns; x++) {
+        clearCell(x, y);
+    }
+}
+  spawnPieces(); // Respawn all of the pieces in their proper location.
+  game.teamTurn = "red"; // We set turn to red just so that when we call startTurn it flips back to black, which always starts first.
+  startTurn();
+  // will have to clear score tracking as well here
 }
 
 function clearCell(x, y) {
