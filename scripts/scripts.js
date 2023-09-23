@@ -50,6 +50,7 @@ window.onload = function() {
 
 function spawnPieces() {
   const teamColors = ["black", "red"]; // Sets an array holding each team color.
+  const element = document.getElementById("turn-display");
   for(const color of teamColors) { // For each index in teamColors, sets the variable color to that indexes value
     const startingPositions = color === "black" ? game.blackStartingPositions : game.redStartingPositions; // Ternary if statement. 
     for(let i=0; i<startingPositions.length; i++) {
@@ -60,7 +61,6 @@ function spawnPieces() {
       game.grid[x][y].bgImage = `url(${color}Piece.png)`; // Used to update cells as we move.
     }
   }
-  element = document.getElementById("turn-display");
   element.style.backgroundImage = "URL(blackPieceMini.png)";
 }
 
@@ -209,7 +209,7 @@ function movePiece(x, y) {
 }
 
 function kingMaker(x, y) {
-  cell = game.gridp[x][y];
+  cell = game.grid[x][y];
   cell.isKing = true;
   const teamColor = cell.occupiedBy;
   cell.element.style.backgroundImage = `url(${teamColor}KingPiece.png)`;
