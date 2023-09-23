@@ -17,6 +17,7 @@ const game = {
     validMove: false, // Is it valid to move to this cell from the active cell
     jumpRequired: [], // The jump required to get from the active cell to this cell.
     jumpPossible: false, // Whether or not a jump is possible FROM this cell.
+    bgImage: null, // Used to update cells as we move.
   },
 }
 
@@ -53,19 +54,17 @@ function spawnPieces() {
     let y = game.blackStartingPositions[i][1];
     game.grid[x][y].occupiedBy = "black";
     game.grid[x][y].element.style.backgroundImage = 'url(blackPiece.png)';
+    game.grid[x][y].bgImage = 'url(blackPiece.png)'; // Used to update cells as we move.
     x = game.redStartingPositions[i][0];
     y = game.redStartingPositions[i][1];
     game.grid[x][y].occupiedBy = "red";
     game.grid[x][y].element.style.backgroundImage = 'url(redPiece.png)';
+    game.grid[x][y].bgImage = 'url(redPiece.png)'; // Used to update cells as we move.
   }
 }
 
 function startTurn() {
-  if(game.teamTurn === "red") {
-    game.teamTurn = "black";
-  } else {
-    game.teamTurn = "red";
-  }
+  game.teamTurn = (game.teamTurn === "black") ? "red" : "black"; // If game.teamTurn is black, set it to red, otherwise set it to black.
   checkForJumps(null, null, true)// Checks if any jumps are available to the current player and if they are found, turns jumpMode on, forcing the player to jump.
 }
 
@@ -86,7 +85,7 @@ function checkForJumps(a, b, checkAll) {
   }
   if(game.piecesThatCanJump.length !== 0) { // If there are pieces that can make a jump, we turn jumpMode on.
     game.jumpMode = true;
-  } else if(game.piecesThatCanJump.length === 0) { // If no pieces can make a jump this turn, we turn jumpMode off.
+  } else { // If no pieces can make a jump this turn, we turn jumpMode off.
     game.jumpMode = false;
   }
 }
@@ -110,9 +109,6 @@ function cellClicked(element) {
     removeActive(a, b); // then we remove active from the previously clicked cell
     setActive(x, y); // and set active on the currently clicked cell
   }
-  /*if(game.activeCell.length > 0) {
-    getValidMoves(x, y, false); // Single function to get valid moves whether we're jumping or moving to an empty cell. We'll put checks within the function to make sure if jump mode is enabled, we do not set empty cells as valid movements unless it requires a jump.
-  }*/
 }
 
 function removeActive(x, y) {
@@ -131,92 +127,54 @@ function setActive(x, y) {
   getValidMoves(x, y);
 }
 
-// If onlyCheck = true, we are simply looking for possible jumps then returning true or false. Otherwise, we are storing valid moves into an array and highlighting those cells.
 function getValidMoves(x, y, onlyCheck) {
-  console.log(`Get valid moves called. Active team: ${game.teamTurn}. Checking from cell: X: ${x}, Y: ${y}`);
-  let opponent;
+  console.log("Get Valid Moves Triggered");
+  if(game.teamTurn === "red" || game.grid[x][y].isKing) {
+    console.log("Red team check triggered");
+    // Check down-left
+    checkDirection(x, y, -1, 1, 0, 7, onlyCheck);
+    // Check down-right
+    checkDirection(x, y, 1, 1, 7, 7, onlyCheck);
+  }
+  if(game.teamTurn === "black" || game.grid[x][y].isKing) {
+    game.log
+    // Check up-left
+    checkDirection(x, y, -1, -1, 0, 0, onlyCheck);
+    // Check up-right
+    checkDirection(x, y, 1, -1, 7, 0, onlyCheck);
+  }
+}
+
+// x and y are the coordinates to start checks from, dx and dy are the adjustments for the x and y coords to determine which direction to check, the next two are for edge checking and then onlyCheck is whether we're only checking for jumps.
+function checkDirection(x, y, dx, dy, columnCheck, rowCheck, onlyCheck) {
+  console.log("Check direction called");
   let a;
   let b;
-  if(game.teamTurn === "black") {
-    opponent = "red";
-  } else {
-    opponent = "black";
-  }
-  // Check for empty spot up-left
-  if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 0 && y !== 0 && !game.jumpMode && !onlyCheck && game.grid[x-1][y-1].occupiedBy === "none") {
-    setValidMove(x-1, y-1);
-  // Check for opponent at up-left
-  } else if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 0 && y !== 0 && game.grid[x-1][y-1].occupiedBy === opponent) {
-    a = x-1; // For prettier calculations
-    b = y-1; // For prettier calculations
-    // Check for empty spot up-left from adjacent enemy piece
-    if(a !== 0 && b !== 0 && game.grid[a-1][b-1].occupiedBy === "none") {
+  const opponent = (game.teamTurn === "black") ? "red" : "black"; // If game.teamTurn === black, return red, else return black.
+  console.log(opponent);
+  console.log(`X: ${x}, ${y}`);
+  if(x !== columnCheck && y !== rowCheck && !game.jumpMode && !onlyCheck && game.grid[x+dx][y+dy].occupiedBy === "none") {
+    console.log("Triggered");
+    setValidMove(x+dx, y+dy);
+  } else if(x !== columnCheck && y !== rowCheck && game.grid[x+dx][y+dy].occupiedBy === opponent) {
+    a = x+dx; // For prettier calculations
+    b = y+dy; // For prettier calculations
+    // Check for another empty spot on the other side of the found adjacent opponent piece.
+    if(a !== columnCheck && b !== rowCheck && game.grid[a+dx][b+dy].occupiedBy === "none") {
       if(onlyCheck && !game.grid[x][y].jumpPossible) {
         setJumpPossible(x, y);
       } else if(!onlyCheck) {
-        setValidMove(a-1, b-1);
-        game.grid[a-1][b-1].jumpRequired = [a, b]; // Sets the coordinates of the cell that must be jumped before landing on this cell.
+        setValidMove(a+dx, b+dy);
+        game.grid[a+dx][b+dy].jumpRequired = [a, b]; // Sets the coordinates of the cell that must be jumped before landing on this cell.
       }
     }
   }
-  // Check for empty spot bottom-left
-  if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 0 && y !== 7 && !game.jumpMode && !onlyCheck && game.grid[x-1][y+1].occupiedBy === "none") {
-    setValidMove(x-1, y+1);
-  // Check for opponent at bottom-left
-  } else if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 0 && y !== 7 && game.grid[x-1][y+1].occupiedBy === opponent) {
-    a = x-1; // For prettier calculations
-    b = y+1; // For prettier calculations
-    // Check for empty spot bottom-left from adjacent enemy piece
-    if(a !== 0 && b !== 7 && game.grid[a-1][b+1].occupiedBy === "none") {
-      if(onlyCheck && !game.grid[x][y].jumpPossible) {
-        setJumpPossible(x, y);
-      } else if(!onlyCheck) {
-        setValidMove(a-1, b+1);
-        game.grid[a-1][b+1].jumpRequired = [a, b];
-      }
-    }
-  } 
-  // Check for empty spot bottom-right
-  if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 7 && y !== 7 && !game.jumpMode && !onlyCheck && game.grid[x+1][y+1].occupiedBy === "none") {
-    setValidMove(x+1, y+1);
-  // Check for opponent at bottom-right
-  } else if((game.teamTurn === "red" || game.grid[x][y].isKing) && x !== 7 && y !== 7 && game.grid[x+1][y+1].occupiedBy === opponent) {
-    a = x+1; // For prettier calculations
-    b = y+1; // For prettier calculations
-    // Check for empty spot bottom-right from adjacent enemy piece
-    if(a !== 0 && b !== 7 && game.grid[a+1][b+1].occupiedBy === "none") {
-      if(onlyCheck && !game.grid[x][y].jumpPossible) {
-        setJumpPossible(x, y);
-      } else if(!onlyCheck) {
-        setValidMove(a+1, b+1);
-        game.grid[a+1][b+1].jumpRequired = [a, b];
-      }
-    }
-  }
-    // Check for empty spot up-right
-    if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 7 && y !== 0 && !game.jumpMode && !onlyCheck && game.grid[x+1][y-1].occupiedBy === "none") {
-      setValidMove(x+1, y-1);
-    // Check for opponent at bottom-right
-    } else if((game.teamTurn === "black" || game.grid[x][y].isKing) && x !== 7 && y !== 0 && game.grid[x+1][y-1].occupiedBy === opponent) {
-      a = x+1; // For prettier calculations
-      b = y-1; // For prettier calculations
-      // Check for empty spot up-right from adjacent enemy piece
-      if(a !== 7 && b !== 0 && game.grid[a+1][b-1].occupiedBy === "none") {
-        if(onlyCheck && !game.grid[x][y].jumpPossible) {
-          setJumpPossible(x, y);
-        } else if(!onlyCheck) {
-          setValidMove(a+1, b-1);
-          game.grid[a+1][b-1].jumpRequired = [a, b];
-        }
-      }
-    }
 }
 
 function setJumpPossible(x, y) {
   game.grid[x][y].jumpPossible = true;
   game.piecesThatCanJump.push([x,y]);
 }
-
 
 function setValidMove(x, y) {
   console.log("Set valid move called");
@@ -230,7 +188,9 @@ function movePiece(x, y) {
   game.piecesThatCanJump = []; // Clear the array itself.
   let a = game.activeCell[0]; // Store active piece's column coordinate
   let b = game.activeCell[1]; // Store active piece's row coordinate
-  clearCell(a, b); // Clear the cell we just left
+  const bgImage = game.grid[a][b].bgImage; // Store the background image from the cell we're leaving
+  game.grid[x][y].isKing = game.grid[a][b].isKing; // Transfer King status to the new cell we're moving to in case we need to check for double jumps from that location.
+  clearCell(a, b); // Clear the cell we're leaving
   if(game.grid[x][y].jumpRequired.length !== 0) { // If a piece was jumped
     a = game.grid[x][y].jumpRequired[0];
     b = game.grid[x][y].jumpRequired[1];
@@ -244,13 +204,24 @@ function movePiece(x, y) {
   game.grid[x][y].occupiedBy = game.teamTurn;
   game.grid[x][y].validMove = false;
   game.grid[x][y].jumpRequired = [];
-  if(game.teamTurn === "red") {
-    game.grid[x][y].element.style.backgroundImage = 'url(redPiece.png)';
-  } else {
-    game.grid[x][y].element.style.backgroundImage = 'url(blackPiece.png)';
+  game.grid[x][y].bgImage = bgImage;
+  game.grid[x][y].element.style.backgroundImage = bgImage;
+  if(game.teamTurn === "red" && y === 7 || game.teamTurn === "black" && y === 0) {
+    kingMaker(x, y);
   }
   if(!game.jumpMode) { // End turn only if no more jumps are available.
     endTurn();
+  }
+}
+
+function kingMaker(x, y) {
+  game.grid[x][y].isKing = true;
+  if(game.teamTurn === "red") {
+   //game.grid[x][y].element.style.backgroundImage = redKing
+   //game.grid[x][y].bgImage = redking
+  } else {
+  game.grid[x][y].element.style.backgroundImage = 'url(blackKingPiece.png)';
+  game.grid[x][y].bgImage = 'url(blackKingPiece.png)';
   }
 }
 
