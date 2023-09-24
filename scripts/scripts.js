@@ -40,7 +40,7 @@ window.onload = function() {
       } else {
         elem.classList.add('colorOne');
       }
-      // Pushes an object that holds the cells data into it's corresponding column and row.
+      // Pushes an object that holds the cells data into it's corresponding column and row. The object is stored in game.grid[x][y]
       game.grid[x][y] = structuredClone(game.gridDefaults);
       game.grid[x][y].element = elem;
     }
@@ -231,9 +231,9 @@ function endTurn() {
 
 // Takes each cell from the valid moves array and clears it/resets it to defaults. 
 function clearValidMovesArray() {
-  for(let i=0; i<game.validMoves.length; i++) {
-    const x = game.validMoves[i][0];
-    const y = game.validMoves[i][1];
+  for(const move of game.validMoves) {
+    const x = move[0];
+    const y = move[1];
     const cell = game.grid[x][y];
     cell.element.classList.remove("highlight");
     cell.validMove = false;
@@ -245,9 +245,9 @@ function clearValidMovesArray() {
 // Takes each cell from the jumpPossible array and sets its jumpPossible property to false. We don't send them to clearCell() because we aren't setting all properties to default.
 // We need to store cells in the jumpPossible array in the case that we have multiple possible jumps. Once we jump, we need to access all of the cells with the possibleJump property set to true and set them back to false.
 function clearPiecesThatCanJumpArray() {
-  for(let i=0; i<game.piecesThatCanJump.length; i++) {
-    const x = game.piecesThatCanJump[i][0];
-    const y = game.piecesThatCanJump[i][1];
+  for(const piece of game.piecesThatCanJump) {
+    const x = piece[0];
+    const y = piece[1];
     game.grid[x][y].jumpPossible = false;
   }
 }
@@ -258,7 +258,7 @@ function resetGame() {
     for(x=0; x<game.columns; x++) {
         clearCell(x, y);
     }
-}
+  }
   spawnPieces(); // Respawn all of the pieces in their proper location.
   game.teamTurn = "red"; // We set turn to red just so that when we call startTurn it flips back to black, which always starts first.
   startTurn();
@@ -267,9 +267,14 @@ function resetGame() {
 
 function clearCell(x, y) {
   const elem = game.grid[x][y].element; // Store a temporary reference to the DOM element
-  elem.classList.remove("highlight"); // Remove the valid move highlight if it exists
-  elem.classList.remove("active"); // Remove any active highlighting if it exists
+  clearElement(elem);
   elem.style.backgroundImage = 'none'; // Remove any displayed pieces if they exist
   game.grid[x][y] = structuredClone(game.gridDefaults); // Set the grid object back to default values, we don't use the reference variable "cell" because it can act a bit wonky with
   game.grid[x][y].element = elem; // Restore the reference to the respective DOM element.
+}
+
+// Single function for removing any added styles to DOM elements. This is in case I want to add any later; removing them all at once will be easier if I only need to edit this function.
+function clearElement(elem) {
+  elem.classList.remove("highlight"); // Remove the valid move highlight if it exists
+  elem.classList.remove("active"); // Remove any active highlighting if it exists
 }
