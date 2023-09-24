@@ -151,20 +151,24 @@ function checkDirection(x, y, dx, dy, columnCheck, rowCheck, onlyCheck) {
   let a;
   let b;
   const opponent = (game.teamTurn === "black") ? "red" : "black"; // If game.teamTurn === black, return red, else return black.
-  if(x !== columnCheck && y !== rowCheck && !game.jumpMode && !onlyCheck && game.grid[x+dx][y+dy].occupiedBy === "none") {
+  if(isInGrid(x+dx, y+dy) && !game.jumpMode && !onlyCheck && game.grid[x+dx][y+dy].occupiedBy === "none") { // Checks if the next cell over in the given direction is a valid cell inside of the grid and is empty, as long as jump mode is disabled.
     setValidMove(x+dx, y+dy);
-  } else if(x !== columnCheck && y !== rowCheck && game.grid[x+dx][y+dy].occupiedBy === opponent) {
-    a = x+dx; // For prettier calculations
-    b = y+dy; // For prettier calculations
-    // Check for another empty spot on the other side of the found adjacent opponent piece.
-    if(a !== columnCheck && b !== rowCheck && game.grid[a+dx][b+dy].occupiedBy === "none") {
-      if(onlyCheck && !game.grid[x][y].jumpPossible) {
-        setJumpPossible(x, y);
-      } else if(!onlyCheck) {
-        setValidMove(a+dx, b+dy);
-        game.grid[a+dx][b+dy].jumpRequired = [a, b]; // Sets the coordinates of the cell that must be jumped before landing on this cell.
+  } else if(isInGrid(x+dx, y+dy) && game.grid[x+dx][y+dy].occupiedBy === opponent) { // If jump mode is enabled, it instead first checks that the next cell over in the given direction is valid and inside of the grid then checks if the cell contains an opponent piece.
+    a = x+dx; // For prettier calculations. Since an opponent was found we set the cell's x coordinate to variable a.
+    b = y+dy; // For prettier calculations. Since an opponent was found we set the cell's y coordinate to variable y.
+    if(isInGrid(a+dx, b+dy) && game.grid[a+dx][b+dy].occupiedBy === "none") { // Now, starting at this new cell location (the one in which the opponent piece was discovered), we check the next cell over in the given direction for being a valid cell inside of the grid and for being empty.
+      if(onlyCheck && !game.grid[x][y].jumpPossible) { // If we are in jump only mode and we haven't already marked the as having a possible jump, we
+        setJumpPossible(x, y); // set the location as having a possible jump
+      } else if(!onlyCheck) { // Otherwise if we are not in check only mode, we 
+        setValidMove(a+dx, b+dy); // set the empty cell we just checked as being a valid move
+        game.grid[a+dx][b+dy].jumpRequired = [a, b]; // Sets the coordinates of the cell that must be jumped before landing on this new valid move cell.
       }
     }
+  }
+
+  // Helper function to check if the cell in question is valid and inside of the grid. Basically just edge checking.
+  function isInGrid(x, y) {
+    return x >= 0 && x < game.columns && y >= 0 && y < game.rows;
   }
 }
 
