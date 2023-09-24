@@ -134,20 +134,20 @@ function getValidMoves(x, y, onlyCheck) {
   const cell = game.grid[x][y];
   if(game.teamTurn === "red" || cell.isKing) {
     // Check down-left
-    checkDirection(x, y, -1, 1, 0, 7, onlyCheck);
+    checkDirection(x, y, -1, 1, onlyCheck);
     // Check down-right
-    checkDirection(x, y, 1, 1, 7, 7, onlyCheck);
+    checkDirection(x, y, 1, 1, onlyCheck);
   }
   if(game.teamTurn === "black" || cell.isKing) {
     // Check up-left
-    checkDirection(x, y, -1, -1, 0, 0, onlyCheck);
+    checkDirection(x, y, -1, -1, onlyCheck);
     // Check up-right
-    checkDirection(x, y, 1, -1, 7, 0, onlyCheck);
+    checkDirection(x, y, 1, -1, onlyCheck);
   }
 }
 
 // x and y are the coordinates to start checks from, dx and dy are the adjustments for the x and y coords to determine which direction to check, the next two are for edge checking and then onlyCheck is whether we're only checking for jumps.
-function checkDirection(x, y, dx, dy, columnCheck, rowCheck, onlyCheck) {
+function checkDirection(x, y, dx, dy, onlyCheck) {
   let a;
   let b;
   const opponent = (game.teamTurn === "black") ? "red" : "black"; // If game.teamTurn === black, return red, else return black.
