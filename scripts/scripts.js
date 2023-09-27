@@ -102,8 +102,6 @@ function cellClicked(element) {
   console.log(game.grid[x][y]);
   if(cell.validMove) {
     movePiece(x, y);
-  } else if(cell.occupiedBy !== game.teamTurn || (cell.occupiedBy === "none" && !cell.validMove)) {
-    return; // then we simply do nothing and return
   } else if(cell.active) { // If the clicked cell is active, we turn it inactive
     toggleActive(x, y, false); // make it inactive
   } else if(!cell.active && cell.occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length === 0 || (game.jumpMode && cell.jumpPossible && game.activeCell.length === 0)) { 
