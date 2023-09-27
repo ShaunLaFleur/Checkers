@@ -104,9 +104,9 @@ function cellClicked(element) {
     movePiece(x, y);
   } else if(cell.active) { // If the clicked cell is active, we turn it inactive
     toggleActive(x, y, false); // make it inactive
-  } else if(!cell.active && cell.occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length === 0 || (game.jumpMode && cell.jumpPossible && game.activeCell.length === 0)) { 
+  } else if(!cell.active && cell.occupiedBy === game.teamTurn && game.activeCell.length === 0 && (!game.jumpMode || game.jumpMode && cell.jumpPossible)) { 
     toggleActive(x, y, true);
-  } else if(!cell.active && cell.occupiedBy === game.teamTurn && !game.jumpMode && game.activeCell.length > 0 || (game.jumpMode && cell.jumpPossible && game.activeCell.length > 0)) {
+  } else if(!cell.active && cell.occupiedBy === game.teamTurn && game.activeCell.length > 0 && (!game.jumpMode || game.jumpMode && cell.jumpPossible)) {
     a = game.activeCell[0];
     b = game.activeCell[1];
     toggleActive(a, b, false); // then we remove active from the previously clicked cell
